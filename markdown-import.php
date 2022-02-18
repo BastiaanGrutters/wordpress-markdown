@@ -12,6 +12,7 @@ Author URI:
 class MarkDownImport {
 	public const WP_CRON_METHOD = 'markdownImportCron';
 	protected const UPDATE_INTERVAL = 'hourly';
+	protected const UPDATE_INTERVAL_SECONDS = 3600;
 
 	protected $options;
 
@@ -51,7 +52,7 @@ class MarkDownImport {
 
 	public static function editorInit(): void {
 		$options = MarkDownImport::getOptions();
-		foreach ($options['post_types'] as $postType) {
+		foreach ($options['post_types'] ?? [] as $postType) {
 			add_meta_box('markdown-import-meta', __('MarkDown import', 'markdown-import'), ['MarkDownImport', 'markdownImportWidget'], $postType, 'normal', 'low');
 		}
 		add_action('save_post', ['MarkDownImport', 'saveMarkDownImportWidget']);
@@ -107,10 +108,10 @@ class MarkDownImport {
 
 	public static function updateMDFiles(): array {
 		global $wpdb;
-		$results = array(
+		$results = [
 			'imported' => 0,
 			'skipped' => 0
-		);
+		];
 		$options = MarkDownImport::getOptions();
 		$mdFiles = $wpdb->get_results("SELECT post_id, meta_value, post_type
 				FROM $wpdb->postmeta
@@ -121,7 +122,7 @@ class MarkDownImport {
 			if (in_array($mdFile->post_type, $options['post_types'], true) && $mdFile->meta_value !== '') {
 				$lastUpdate = get_post_meta($mdFile->post_id, '_markdown_import_timestamp', true);
 				// Check if this MD file is out of date, if so we update it
-				if ($lastUpdate === '' || $lastUpdate + MarkDownImport::$updateInterval <= $currentTime) {
+				if (empty($lastUpdate) || $lastUpdate + MarkDownImport::UPDATE_INTERVAL_SECONDS <= $currentTime) {
 					// load the file and parse it
 					$text = file_get_contents($mdFile->meta_value);
 					$html = \Michelf\Markdown::defaultTransform($text);
@@ -155,7 +156,7 @@ class MarkDownImport {
 	public static function getOptions(bool $forceReload = false) {
 		global $markDownImport;
 		if ($forceReload) {
-			$markDownImport->options = get_option('markdown_import_options', array());
+			$markDownImport->options = get_option('markdown_import_options', []);
 		}
 		return $markDownImport->options;
 	}
