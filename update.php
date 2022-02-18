@@ -3,7 +3,7 @@ include( '../../../wp-config.php' );
 global $wpdb;
 $options = MarkDownImport::getOptions();
 
-if( current_user_can( 'activate_plugins' ) || $_GET[ 'key' ] == $options[ 'update_key' ] ) {
+if( current_user_can( 'activate_plugins' ) || $_GET[ 'key' ] === $options[ 'update_key' ] ) {
 	$startTime = microtime( true );
 	$importStats = MarkDownImport::updateMDFiles();
 	$endTime = microtime( true );
