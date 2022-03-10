@@ -3,7 +3,7 @@
 Plugin Name: Markdown Import
 Plugin URI: http://www.bastiaangrutters.nl
 Description: Allows setting MarkDown file URL per post and importing/parsing it regularly into the post content
-Version: 1.0
+Version: 1.1
 Author: Bastiaan Grutters
 Author URI:
 */
@@ -31,8 +31,18 @@ class MarkDownImport {
 			wp_schedule_event(time(), static::UPDATE_INTERVAL, static::WP_CRON_METHOD);
 		}
 
-
 		add_action(static::WP_CRON_METHOD, function() { static::updateMDFiles(); });
+        if (!function_exists('curl_version') && !ini_get('allow_url_fopen')) {
+			add_action('admin_notices', function() {
+				printf('<div class="notice notice-error">
+                <h3>%s</h3>
+                <p>%s</p>
+            </div>',
+					__('MarkDown Import plugin error', 'markdown-import'),
+					__('Your server does not support file_get_contents or cURL, please set allow_url_fopen to 1 or add cURL support.', 'markdown-import')
+				);
+			});
+        }
 	}
 
 	public static function autoload($className): void {
@@ -118,27 +128,31 @@ class MarkDownImport {
 				JOIN $wpdb->posts ON ID = post_id
 				WHERE meta_key = '_markdown_import'");
 		$currentTime = time();
-		foreach ($mdFiles as $mdFile) {
-			if (in_array($mdFile->post_type, $options['post_types'], true) && $mdFile->meta_value !== '') {
-				$lastUpdate = get_post_meta($mdFile->post_id, '_markdown_import_timestamp', true);
-				// Check if this MD file is out of date, if so we update it
-				if (empty($lastUpdate) || $lastUpdate + MarkDownImport::UPDATE_INTERVAL_SECONDS <= $currentTime) {
-					// load the file and parse it
-					$text = file_get_contents($mdFile->meta_value);
-					$html = \Michelf\Markdown::defaultTransform($text);
-					$postData = array(
-						'ID' => $mdFile->post_id,
-						'post_content' => $html
-					);
-					wp_update_post($postData);
-					update_post_meta($mdFile->post_id, '_markdown_import_timestamp', time());
-					$results['imported']++;
-				} else {
+        try {
+			foreach ($mdFiles as $mdFile) {
+				if (in_array($mdFile->post_type, $options['post_types'], true) && $mdFile->meta_value !== '') {
+					$lastUpdate = get_post_meta($mdFile->post_id, '_markdown_import_timestamp', true);
+					// Check if this MD file is out of date, if so we update it
+					if (empty($lastUpdate) || $lastUpdate + MarkDownImport::UPDATE_INTERVAL_SECONDS <= $currentTime) {
+						// load the file and parse it
+						$text = static::getMarkdownFileContent($mdFile->meta_value);
+						$html = \Michelf\Markdown::defaultTransform($text);
+						$postData = array(
+							'ID' => $mdFile->post_id,
+							'post_content' => $html
+						);
+						wp_update_post($postData);
+						update_post_meta($mdFile->post_id, '_markdown_import_timestamp', time());
+						$results['imported']++;
+					} else {
+						$results['skipped']++;
+					}
+				} elseif ($mdFile->meta_value !== '') {
 					$results['skipped']++;
 				}
-			} elseif ($mdFile->meta_value !== '') {
-				$results['skipped']++;
 			}
+		} catch (RuntimeException $e) {
+
 		}
 		return $results;
 	}
@@ -161,11 +175,26 @@ class MarkDownImport {
 		return $markDownImport->options;
 	}
 
-	public static function wordpressInit(): void {
-	}
+    protected static function getMarkdownFileContent(string $url): string {
+        if (ini_get('allow_url_fopen')) {
+            $content = file_get_contents($url);
+            if ($content !== false) {
+                return $content;
+			}
+		}
 
-	public static function wpEnqueueScripts(): void {
-		wp_enqueue_style('markdown-import-style', plugins_url('markdown-import.css', __FILE__));
+		if (function_exists('curl_version'))
+		{
+			$curl = curl_init();
+			curl_setopt($curl, CURLOPT_URL, $url);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+			$content = curl_exec($curl);
+			curl_close($curl);
+
+            return $content;
+		}
+
+        throw new RuntimeException('No way to retrieve the markdown file.');
 	}
 }
 
