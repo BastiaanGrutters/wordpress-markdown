@@ -40,13 +40,21 @@ $postTypes = get_post_types([], 'objects');
                     <td colspan="2">
                         <input type="checkbox" id="post-type-<?php print($key); ?>" name="markdown_import_options[post_types][]" value="<?php print($key); ?>"
 							<?php print((isset($options['post_types']) && is_array($options['post_types']) && in_array($key, $options['post_types'], true)) ? 'checked ' : ''); ?>/>
-                        <label for="post-type-<?php print($key); ?>"><?php _e('Enable for ', 'markdown-import'); ?><?php print(isset($postType->labels, $postType->labels->name) ? $postType->labels->name : $key); ?></label>
-                        <p class="description"><?php _e('Select this to enable the import function for this post type', 'markdown-import'); ?></p>
+                        <label for="post-type-<?php print($key); ?>"><?php _e('Enable for ', MarkDownImport::TEXT_DOMAIN); ?><?php print(isset($postType->labels, $postType->labels->name) ? $postType->labels->name : $key); ?></label>
+                        <p class="description"><?php _e('Select this to enable the import function for this post type', MarkDownImport::TEXT_DOMAIN); ?></p>
                     </td>
                 </tr>
 				<?php
 			}
 			?>
+            <tr>
+                <td colspan="2">
+                    <label>
+                        <input type="checkbox" name="markdown_import_options[show_source_link]" <?php print(($options['show_source_link'] ?? null) === 'yes' ? 'checked ' : ''); ?>value="yes" /> <?php _e('Show source link below imported posts.', MarkDownImport::TEXT_DOMAIN); ?>
+                    </label>
+                    <p class="description"><?php _e('Show a link to the source MarkDown below imported posts or pages.', MarkDownImport::TEXT_DOMAIN); ?></p>
+                </td>
+            </tr>
             <tr>
                 <td><label for="updater-key">WP CRON</label></td>
                 <td>
@@ -58,7 +66,7 @@ $postTypes = get_post_types([], 'objects');
                     <label>
                         <input type="checkbox" name="markdown_import_options[import_markdown]" value="now" /> Import markdown now
                     </label>
-                    <p class="description"><?php _e('Select import markdown for the selected post types now.', 'markdown-import'); ?></p>
+                    <p class="description"><?php _e('Select import markdown for the selected post types now.', MarkDownImport::TEXT_DOMAIN); ?></p>
                 </td>
             </tr>
             <tr>
