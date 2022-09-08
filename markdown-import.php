@@ -186,7 +186,7 @@ class MarkDownImport {
                 try {
                     // load the file and parse it
                     $text = static::getMarkdownFileContent($mdFile->meta_value);
-                    $html = \Michelf\Markdown::defaultTransform($text);
+                    $html = \Michelf\MarkdownExtra::defaultTransform($text);
                     $postData = array(
                         'ID' => $mdFile->post_id,
                         'post_content' => $html
