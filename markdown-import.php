@@ -3,7 +3,7 @@
 Plugin Name: Markdown Import
 Plugin URI: http://www.bastiaangrutters.nl
 Description: Allows setting MarkDown file URL per post and importing/parsing it regularly into the post content
-Version: 1.1
+Version: 1.2
 Author: Bastiaan Grutters
 Author URI:
 */
