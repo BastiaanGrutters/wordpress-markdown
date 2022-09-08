@@ -194,7 +194,7 @@ class MarkDownImport {
                     wp_update_post($postData);
                     update_post_meta($mdFile->post_id, '_markdown_import_timestamp', time());
                     $results['imported']++;
-				} catch (RuntimeException) { }
+				} catch (RuntimeException $e) { }
             }
         }
 
