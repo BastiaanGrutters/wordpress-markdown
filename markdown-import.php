@@ -111,11 +111,13 @@ class MarkDownImport {
 	}
 
 	public static function saveMarkDownImportWidget(int $postId): void {
-		if (current_user_can('edit_post') && isset($_POST['_markdown_import_url'])) {
-			update_post_meta($postId, '_markdown_import', $_POST['_markdown_import_url']);
-			if (isset($_POST['markdown_import_clear_timestamp']) && $postId == $_POST['markdown_import_clear_timestamp']) {
-				delete_post_meta($postId, '_markdown_import_timestamp');
-			}
+		if (!current_user_can('edit_post', $postId) || !isset($_POST['_markdown_import_url'])) {
+			return;
+		}
+
+		update_post_meta($postId, '_markdown_import', $_POST['_markdown_import_url']);
+		if (isset($_POST['markdown_import_clear_timestamp']) && $postId == $_POST['markdown_import_clear_timestamp']) {
+			delete_post_meta($postId, '_markdown_import_timestamp');
 		}
 	}
 
